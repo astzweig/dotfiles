@@ -1,0 +1,20 @@
+export PATH="${HOME}/bin:${PATH}"
+export PS1='%(?.%F{green}✓.%F{red}𐄂%F{8} [%?] )%F{8}%2~%f %# '
+export RPS1='%*'
+export GPG_TTY=$(tty)
+export VISUAL='vim'
+export EDITOR="${VISUAL}"
+export LANG='en_US.UTF-8'
+export LC_ALL='en_US.UTF-8'
+fpath+=(${HOME}/.zshfn)
+
+export HOMEBREW_INSTALL_FROM_API=1
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
+export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
+export HOMEBREW_PREFIX="${HOME}/Library/Application Support/Homebrew"
+export HOMEBREW_CELLAR="${HOMEBREW_PREFIX}/Cellar"
+export HOMEBREW_CASK_OPTS="--no-quarantine ${HOMEBREW_CASK_OPTS}"
+export MANPATH="${HOMEBREW_PREFIX}/share/man${MANPATH+:$MANPATH}:"
+export INFOPATH="${HOMEBREW_PREFIX}/share/info:${INFOPATH:-}"

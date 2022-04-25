@@ -1,0 +1,13 @@
+# vi: ft=zsh
+function activate() {
+  current_folder=`basename "$(pwd)"`;
+  git status 2> /dev/null >&2
+  if [ $? -eq 0 ]; then
+    current_folder=`basename "$(git rev-parse --show-toplevel)"`
+  fi
+  activator="${HOME}/.virutalenvs/${current_folder}/bin/activate";
+  if [ ! -f "${activator}" ]; then
+    return 128
+  fi
+  source "${activator}";
+}

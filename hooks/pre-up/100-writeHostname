@@ -1,0 +1,39 @@
+#!/usr/bin/env zsh
+# vi: set expandtab ft=zsh tw=80 ts=2
+
+function getHostnameFromArgs() {
+  ps -o args= -f -p ${gpid} | egrep --only-matching '\-B ([^ ]+)' | head -n 1 | cut -d' ' -f2
+}
+
+function getHostnameFromSystem() {
+  whence scutil >&! /dev/null && scutil --get LocalHostName || hostname
+}
+
+function getExecPrerequisites() {
+  cmds+=(
+    [cat]=''
+    [grep]=''
+    [egrep]=''
+    [ps]=''
+    [hostname]=''
+  )
+}
+
+function configure_system() {
+  cat ../../rcrc | grep HOSTNAME >&! /dev/null && return
+  local gpid=$(ps -o ppid= -p $PPID)
+  local hostname=$(getHostnameFromArgs)
+  if [ -n "$hostname" ]; then
+    print -- "HOSTNAME=${hostname}" >> ../../rcrc
+  else
+    hostname=($(getHostnameFromSystem))
+    askUser info ${${:--d}:^hostname} 'What is this computers hostname?' < $(getProcessTTY)
+    print -- "HOSTNAME=${REPLY}" >> ../../rcrc
+  fi
+}
+
+
+if [[ "${ZSH_EVAL_CONTEXT}" == toplevel ]]; then
+  source ../lib.sh || exit
+  app_main "$@"
+fi

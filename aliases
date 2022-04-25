@@ -1,0 +1,30 @@
+# vi: ft=zsh
+alias cdd="cd ~/Downloads"
+alias cdp="cd ~/Projects"
+alias cddc="cd ~/Documents"
+alias cddt="cd ~/Desktop"
+alias g="git"
+alias l="ls -1hAF -G"
+alias ll="ls -lhAF -G"
+alias grep="grep --color=auto"
+alias c="tr -d '\n' | pbcopy"
+alias week='date +%V'
+alias update='sudo softwareupdate -i -a; brew update; brew upgrade; brew cleanup; npm install npm -g; npm update -g; sudo gem update --system; sudo gem update; sudo gem cleanup'
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en0"
+alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+alias flush="dscacheutil -flushcache && killall -HUP mDNSResponder"
+alias lscleanup="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -all local,system,user"
+alias map="xargs -n1"
+alias cleanup="find . -type f -name '*.DS_Store' -ls -delete"
+alias show="defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder"
+alias hide="defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder"
+alias hidedesk="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias showdesk="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1]);"'
+alias plistbuddy="/usr/libexec/PlistBuddy"
+alias mergepdf='gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=_merged.pdf'
+alias pplist="plutil -convert xml1 -o -"
+alias stfu="osascript -e 'set volume output muted true'"
+alias loudest="osascript -e 'set volume output volume 100'"
+alias path='echo -e ${PATH//:/\\n}'

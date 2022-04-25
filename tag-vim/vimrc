@@ -1,0 +1,128 @@
+"> General
+set nocompatible
+filetype plugin indent on
+
+" Use the OS clipboard by default (on versions compiled with `+clipboard`)
+set clipboard=unnamed
+let mapleader="-"
+set ttyfast
+set backupdir=~/.vim/backups
+set directory=~/.vim/swaps
+set backupskip=/tmp/*,/private/tmp/*
+
+"> Editor view
+syntax on
+set number
+set updatetime=1800
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,CursorHold,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | set rnu   | endif
+  autocmd BufLeave,CursorMoved,FocusLost,InsertEnter,WinLeave   * if &nu                  | set nornu | endif
+augroup END
+set ruler
+" Show “invisible” characters
+set lcs=tab:▸\ ,trail:·,eol:¬,nbsp:_
+set list
+let &colorcolumn=join(range(81,999),",")
+set laststatus=2
+highlight ColorColumn ctermbg=7 
+function! SetColorColumnColor()
+  if &background ==# 'dark'
+    highlight ColorColumn ctermbg=8 
+  endif
+endfunction
+autocmd OptionSet background call SetColorColumnColor()
+
+
+"> Search
+set hlsearch
+set incsearch
+
+"> Indention
+set expandtab
+set autoindent
+set smartindent
+set tabstop=2
+set shiftwidth=2
+augroup SpaceCleaner
+    autocmd!
+    autocmd BufWritePre *.py,*.php,*.js,*.html %s/\s\+$//e
+augroup End
+
+" Strip trailing whitespace (,ss)
+function! StripWhitespace()
+	let save_cursor = getpos(".")
+	let old_query = getreg('/')
+	:%s/\s\+$//e
+	call setpos('.', save_cursor)
+	call setreg('/', old_query)
+endfunction
+noremap <leader>ss :call StripWhitespace()<CR>
+" Save a file as root (-W)
+noremap <leader>W :w !sudo tee % > /dev/null<CR>
+
+"> Folding
+func FoldingByPointedBrackets(lnum)
+  let line = getline(a:lnum)
+  let nextline = getline(a:lnum + 1)
+
+  if line =~ '^">'
+    return count(line, '>')
+  elseif nextline =~ '^">'
+    return count(nextline, '>')-1
+  else
+    return '='
+  endif
+endfunc
+
+"> Abbreviations
+func Eatchar(pat)
+	let c = nr2char(getchar(0))
+	return (c =~ a:pat) ? '' : c
+endfunc
+
+">> POSIX Shell script
+iabbr sh# #/bin/sh<CR><LEFT><C-R>=Eatchar('\s')<CR>
+iabbr shfn# <ESC>xa() {<CR>CURSOR<CR>}<ESC>?CURSOR<CR>veda<LEFT><C-R>=Eatchar('\s')<CR>
+iabbr shmain# main() {<CR>CURSOR<CR>}<CR><CR>main<ESC>?CURSOR<CR>veda<LEFT><C-R>=Eatchar('\s')<CR>
+
+">> ZSH Shell script
+iabbr zsh# #/usr/bin/env zsh<CR><LEFT><C-R>=Eatchar('\s')<CR>
+iabbr zshmain# #/usr/bin/env zsh<CR><CR>main() {<CR>CURSOR<CR>}<CR><CR>main<ESC>?CURSOR<CR>veda<LEFT><C-R>=Eatchar('\s')<CR>
+
+">> Bash Shell script
+iabbr bash# #/usr/bin/env bash<CR><LEFT><C-R>=Eatchar('\s')<CR>
+iabbr bashmain# #/usr/bin/env bash<CR><CR>main() {<CR>CURSOR<CR>}<CR><CR>main<ESC>?CURSOR<CR>veda<LEFT><C-R>=Eatchar('\s')<CR>
+
+">> HTML
+iabbr html# <!DOCTYPE html>
+      \<CR><html>
+      \<CR><Tab><head>
+      \<CR><Tab><meta charset="utf-8">
+      \<CR><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      \<CR><meta http-equiv="X-UA-Compatible" content="ie=edge"
+      \<CR><title>CURSOR</title>
+      \<CR><link rel="stylesheet" href="main.css">
+      \<CR><C-D></head>
+      \<CR><body>
+      \<CR><Tab><script src="main.js"></script>
+      \<CR><C-D></body>
+      \<CR><C-D></html><ESC>?CURSOR<CR>veda<LEFT><C-R>=Eatchar('\s')<CR>
+
+" Automatic commands
+if has("autocmd")
+	" Enable file type detection
+	filetype on
+	" Treat .json files as .js
+	autocmd BufNewFile,BufRead *.json setfiletype json syntax=javascript
+	" Treat .md files as Markdown
+	autocmd BufNewFile,BufRead *.md setlocal filetype=markdown
+	" Enable .vimrc folding
+	autocmd BufNewFile,BufRead *.vimrc set foldmethod=expr foldexpr=FoldingByPointedBrackets(v:lnum)
+endif
+
+"> Netrw
+let g:netrw_liststyle=3
+let g:netrw_browse_split=4
+let g:netrw_winsize=50
+let g:netrw_altv = 1

@@ -1,0 +1,4 @@
+# vi: ft=zsh
+function mkd() {
+	mkdir -p "$@" && cd "$_";
+}

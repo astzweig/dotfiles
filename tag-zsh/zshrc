@@ -1,0 +1,33 @@
+setopt prompt_subst
+setopt AUTO_CD
+setopt LIST_PACKED
+setopt LIST_ROWS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_NO_FUNCTIONS
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_FIND_NO_DUPS
+setopt HIST_VERIFY
+setopt NULL_GLOB
+setopt SHARE_HISTORY
+
+# Set emacs keymap
+bindkey -e
+
+# Add version controll system informations for right prompt
+autoload -Uz vcs_info
+precmd_functions+=( vcs_info )
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' formats '%F{26}[%b]%f'
+export RPS1="\${vcs_info_msg_0_} ${RPS1}"
+
+for file in .aliases; do
+  [ -r "${file}" -a -f "${file}" ] && source "${file}";
+done;
+unset file;
+
+# Autoload functions
+# note:
+# The paranthesis @ the end contains a list of glob qualifiers and modifieres.
+# Here: . means only plain files (no symlinks) and :t remove all leading path
+# components.
+autoload -Uz $fpath[1]/*(.:t)

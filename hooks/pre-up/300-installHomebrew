@@ -1,0 +1,120 @@
+#!/usr/bin/env zsh
+# vi: set expandtab ft=zsh tw=80 ts=2
+
+export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
+export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
+
+function getExecPrerequisites() {
+  cmds+=(
+    [launchctl]=''
+    [git]=''
+    [mkdir]=''
+    [chmod]=''
+    []=''
+  )
+}
+
+function configureInstallPrefix() {
+  [[ -d "${homebrew_prefix}" ]] && return
+  loptty -y body -- -d "Install prefix at ${homebrew_prefix} does not exist. Will create it."
+  indicateActivity createInstallPrefix 'Creating install prefix'
+}
+
+function createInstallPrefix() {
+  mkdir -p ${homebrew_prefix} 2> /dev/null || {
+    loptty -- -e 'Could not create directory' -e $dirPath
+    return 10
+  }
+  chmod 744 ${homebrew_prefix}
+}
+
+function downloadHomebrew() {
+  local git_homebrew_remote=`getDefaultGitHomebrewURL`
+  pushd -q ${homebrew_prefix} || return 10
+  test -d ".git" && return 11
+  git init -q
+  git config remote.origin.url "${git_homebrew_remote}"
+  git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+  git config core.autocrlf false
+  git config --replace-all homebrew.analyticsmessage false
+  git config --replace-all homebrew.caskanalyticsmessage false
+  git fetch --quiet --force --depth 1 origin > /dev/null
+  git fetch --quiet --force --tags --depth 1 origin > /dev/null
+  git reset --hard origin/master
+  popd -q
+}
+
+function createBrewCallerScript() {
+  local brewCallerPath=${homebrew_prefix}/bin/brew
+  chmod ug+x ${brewCallerPath}
+  [[ -f ${HOME}/bin/brew ]] && return
+  mkdir -p ${HOME}/bin
+  ln -sf ${brewCallerPath} ${HOME}/bin/brew
+}
+
+function updateBrew() {
+  local brewCallerPath=${homebrew_prefix}/bin/brew
+  (
+    eval "$(${brewCallerPath} shellenv)"
+    ${brewCallerPath} update --force --quiet
+    chmod go-w "${homebrew_prefix}/share/zsh"
+  )
+}
+
+function createLaunchDaemonsPlist() {
+  local uid=`id -u`
+  local launcherName="de.astzweig.macos.launchagents.$1"
+  local launchAgentPath=${HOME}/Library/LaunchAgents
+  local launcherPath="${launchAgentPath}/${launcherName}.plist"
+  local brewCommand="$2"
+  [[ -d ${launchAgentPath} ]] || mkdir ${launchAgentPath} || return
+  [[ -f ${launcherPath} ]] && return
+  print -- "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+  <dict>
+    <key>Label</key>
+    <string>${launcherName}</string>
+    <key>Program</key>
+    <string>${homebrew_prefix}/bin/brew</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>${brewCommand}</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>1800</integer>
+  </dict>
+</plist>" > ${launcherPath} || return
+  chmod u=rw,go=r ${launcherPath}
+  launchctl bootstrap gui/${uid} ${launcherPath}
+}
+
+function installHomebrewUpdater() {
+  createLaunchDaemonsPlist brew-updater update
+}
+
+function getDefaultHomebrewPrefix() {
+  print -- ${HOMEBREW_PREFIX:-${HOME}/Library/Application Support/Homebrew}
+}
+
+function getDefaultGitHomebrewURL() {
+  print -- ${HOMEBREW_BREW_GIT_REMOTE:-https://github.com/Homebrew/brew.git}
+}
+
+function configure_system() {
+  local homebrew_prefix=`getDefaultHomebrewPrefix`
+  if test -d ${homebrew_prefix}; then
+    askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
+  fi
+  configureInstallPrefix || return 10
+  indicateActivity downloadHomebrew 'Downloading Homebrew' || return 11
+  indicateActivity createBrewCallerScript 'Create brew caller script' || return 12
+  indicateActivity updateBrew 'Update brew' || return 13
+  indicateActivity installHomebrewUpdater 'Install Homebrew updater' || return 14
+}
+
+
+if [[ "${ZSH_EVAL_CONTEXT}" == toplevel ]]; then
+  source ../lib.sh || exit
+  app_main "$@"
+fi

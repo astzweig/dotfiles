@@ -1,0 +1,9 @@
+# vi: ft=zsh
+# Determine size of a file or total size of a directory
+function fdsize() {
+	if [[ -n "$@" ]]; then
+		du -sh -- "$@";
+	else
+		du -sh .[^.]* ./*;
+	fi;
+}
