@@ -32,7 +32,7 @@ function loadZShLib() {
   if ! pf --help >&! /dev/null; then
     local cwd=$(pwd)
     if [[ ! -f ${cwd}/zshlib.zwc ]] && whence curl >&! /dev/null; then
-      local fileURL=${ZSHLIB_URL:-https://github.com/astzweig/zshlib/releases/download/v1.0.1/zshlib.zwc}
+      local fileURL=${ZSHLIB_URL:-https://github.com/astzweig/zshlib/releases/download/v2.0.0/zshlib.zwc}
       curl --output ${cwd}/zshlib.zwc -fsSL ${fileURL}
     fi
     [[ -f ${cwd}/zshlib.zwc ]] && fpath+=(${cwd}/zshlib.zwc)
