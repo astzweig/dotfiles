@@ -17,7 +17,7 @@ function getExecPrerequisites() {
 function configureInstallPrefix() {
   [[ -d "${homebrew_prefix}" ]] && return
   loptty -y body -- -d "Install prefix at ${homebrew_prefix} does not exist. Will create it."
-  indicateActivity createInstallPrefix 'Creating install prefix'
+  indicateActivity -- 'Creating install prefix' createInstallPrefix
 }
 
 function createInstallPrefix() {
@@ -107,10 +107,10 @@ function configure_system() {
     askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
   fi
   configureInstallPrefix || return 10
-  indicateActivity downloadHomebrew 'Downloading Homebrew' || return 11
-  indicateActivity createBrewCallerScript 'Create brew caller script' || return 12
-  indicateActivity updateBrew 'Update brew' || return 13
-  indicateActivity installHomebrewUpdater 'Install Homebrew updater' || return 14
+  indicateActivity -- 'Downloading Homebrew' downloadHomebrew || return 11
+  indicateActivity -- 'Create brew caller script' createBrewCallerScript || return 12
+  indicateActivity -- 'Update brew' updateBrew || return 13
+  indicateActivity -- 'Install Homebrew updater' installHomebrewUpdater || return 14
 }
 
 

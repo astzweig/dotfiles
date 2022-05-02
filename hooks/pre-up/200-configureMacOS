@@ -567,36 +567,36 @@ function configure_system() {
   if test "`config read hasRun`" = yes; then
     askUser confirm -n 'The system settings have already been set. Run again?' < $(getProcessTTY) || return
   fi
-  indicateActivity osascript,-e,'tell application "System Preferences" to quit' 'Quit System Preferences'
-  indicateActivity showLibraryFolder 'Make Library folder visible'
-  indicateActivity configureGlobalSettings 'Configure global preferences'
-  indicateActivity configurePrintingApp 'Configure printing preferences app'
-  indicateActivity configureScreensaver 'Configure screensaver preferences'
-  indicateActivity configureDock 'Configure dock app preferences'
-  indicateActivity configureScreencapture 'Configure screen capture app preferences'
-  indicateActivity configureFinder 'Configure Finder app preferences'
-  indicateActivity configureMenuBarClock 'Configure menu bar clock preferences'
-  indicateActivity configureTextEdit 'Configure TextEdit app preferences'
-  indicateActivity configureTimeMachine 'Configure TimeMachine app preferences'
-  indicateActivity configureMusic 'Configure Music app preferences'
-  indicateActivity configureMenuBarItems 'Configure menu bar items preferences'
-  indicateActivity configureAirPlayMenuBarItem 'Configure AirPlay menu bar item preferences'
-  indicateActivity configureSpeechSynthesis 'Configure speech synthesis'
-  indicateActivity configureSpotlight 'Configure Spotlight preferences'
-  indicateActivity configureSiri 'Configure Siri preferences'
-  indicateActivity configureSystemUIServer 'Configure system UI server preferences'
-  indicateActivity configureSpaces 'Configure spaces preferences'
-  indicateActivity configureHIToolbox 'Configure HIToolbox preferences'
-  indicateActivity configureTextInputMenuItem 'Configure text input menu bar item preferences'
-  indicateActivity configureSafari 'Configure Safari app preferences'
-  indicateActivity configureCalendar 'Configure Calendar app preferences'
-  indicateActivity configureMail 'Configure Mail app preferences'
-  indicateActivity configureTerminal 'Configure Terminal app preferences'
-  indicateActivity configureNotes 'Configure Notes app preferences'
-  indicateActivity configureReminders 'Configure Reminders app preferences'
-  indicateActivity configureDiskUtility 'Configure DiskUtility app preferences'
-  indicateActivity configureLoginSettings 'Configure Login preferences'
-  indicateActivity configureHookshot 'Configure Hookshot app preferences'
+  indicateActivity -- 'Quit System Preferences' osascript -e 'tell application "System Preferences" to quit'
+  indicateActivity -- 'Make Library folder visible' showLibraryFolder
+  indicateActivity -- 'Configure global preferences' configureGlobalSettings
+  indicateActivity -- 'Configure printing preferences app' configurePrintingApp
+  indicateActivity -- 'Configure screensaver preferences' configureScreensaver
+  indicateActivity -- 'Configure dock app preferences' configureDock
+  indicateActivity -- 'Configure screen capture app preferences' configureScreencapture
+  indicateActivity -- 'Configure Finder app preferences' configureFinder
+  indicateActivity -- 'Configure menu bar clock preferences' configureMenuBarClock
+  indicateActivity -- 'Configure TextEdit app preferences' configureTextEdit
+  indicateActivity -- 'Configure TimeMachine app preferences' configureTimeMachine
+  indicateActivity -- 'Configure Music app preferences' configureMusic
+  indicateActivity -- 'Configure menu bar items preferences' configureMenuBarItems
+  indicateActivity -- 'Configure AirPlay menu bar item preferences' configureAirPlayMenuBarItem
+  indicateActivity -- 'Configure speech synthesis' configureSpeechSynthesis
+  indicateActivity -- 'Configure Spotlight preferences' configureSpotlight
+  indicateActivity -- 'Configure Siri preferences' configureSiri
+  indicateActivity -- 'Configure system UI server preferences' configureSystemUIServer
+  indicateActivity -- 'Configure spaces preferences' configureSpaces
+  indicateActivity -- 'Configure HIToolbox preferences' configureHIToolbox
+  indicateActivity -- 'Configure text input menu bar item preferences' configureTextInputMenuItem
+  indicateActivity -- 'Configure Safari app preferences' configureSafari
+  indicateActivity -- 'Configure Calendar app preferences' configureCalendar
+  indicateActivity -- 'Configure Mail app preferences' configureMail
+  indicateActivity -- 'Configure Terminal app preferences' configureTerminal
+  indicateActivity -- 'Configure Notes app preferences' configureNotes
+  indicateActivity -- 'Configure Reminders app preferences' configureReminders
+  indicateActivity -- 'Configure DiskUtility app preferences' configureDiskUtility
+  indicateActivity -- 'Configure Login preferences' configureLoginSettings
+  indicateActivity -- 'Configure Hookshot app preferences' configureHookshot
   config write yes hasRun
 }
 

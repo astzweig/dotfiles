@@ -14,9 +14,9 @@ function hideFolders() {
 function configure_system() {
   local dirPath
   for dirPath in ${HOME}/bin ${HOME}/.vim/{backups,swaps}; do
-    [[ ! -d ${dirPath} ]] && indicateActivity mkdir,${dirPath} "Creating ${dirPath}"
+    [[ ! -d ${dirPath} ]] && indicateActivity -- "Creating ${dirPath}" mkdir ${dirPath}
   done
-  indicateActivity hideFolders 'Hide folders'
+  indicateActivity -- 'Hide folders' hideFolders
 }
 
 
