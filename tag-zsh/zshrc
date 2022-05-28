@@ -24,10 +24,3 @@ for file in .aliases; do
   [ -r "${file}" -a -f "${file}" ] && source "${file}";
 done;
 unset file;
-
-# Autoload functions
-# note:
-# The paranthesis @ the end contains a list of glob qualifiers and modifieres.
-# Here: . means only plain files (no symlinks) and :t remove all leading path
-# components.
-autoload -Uz $fpath[1]/*(.:t)
