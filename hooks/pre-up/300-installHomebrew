@@ -15,22 +15,26 @@ function getExecPrerequisites() {
 }
 
 function configureInstallPrefix() {
-  [[ -d "${homebrew_prefix}" ]] && return
-  loptty -y body -- -d "Install prefix at ${homebrew_prefix} does not exist. Will create it."
-  indicateActivity -- 'Creating install prefix' createInstallPrefix
+  local dirPath= desc=
+  for dirPath desc in ${homebrew_prefix} 'Creating install prefix' ${homebrew_directory} 'Creating Homebrew directory'; do
+    if [[ ! -d ${dirPath} ]]; then
+      indicateActivity -- ${desc} createDirAndLogOnFailure ${dirPath}
+    fi
+  done
 }
 
-function createInstallPrefix() {
-  mkdir -p ${homebrew_prefix} 2> /dev/null || {
+function createDirAndLogOnFailure() {
+  local dirPath=$1
+  mkdir -p ${dirPath} 2> /dev/null || {
     loptty -- -e 'Could not create directory' -e $dirPath
     return 10
   }
-  chmod 744 ${homebrew_prefix}
+  chmod 744 ${dirPath}
 }
 
 function downloadHomebrew() {
   local git_homebrew_remote=`getDefaultGitHomebrewURL`
-  pushd -q ${homebrew_prefix} || return 10
+  pushd -q ${homebrew_directory} || return 10
   test -d ".git" && return 11
   git init -q
   git config remote.origin.url "${git_homebrew_remote}"
@@ -38,26 +42,33 @@ function downloadHomebrew() {
   git config core.autocrlf false
   git config --replace-all homebrew.analyticsmessage false
   git config --replace-all homebrew.caskanalyticsmessage false
-  git fetch --quiet --force --depth 1 origin > /dev/null
-  git fetch --quiet --force --tags --depth 1 origin > /dev/null
+  git fetch --quiet --force origin > /dev/null
+  git fetch --quiet --force --tags origin > /dev/null
   git reset --hard origin/master
   popd -q
 }
 
 function createBrewCallerScript() {
-  local brewCallerPath=${homebrew_prefix}/bin/brew
-  chmod ug+x ${brewCallerPath}
-  [[ -f ${HOME}/bin/brew ]] && return
+  local brewCallerPath=${homebrew_directory}/bin/brew
+  [[ -f ${HOME}/bin/brew ]] && { chmod ug+x ${brewCallerPath}; return }
   mkdir -p ${HOME}/bin
-  ln -sf ${brewCallerPath} ${HOME}/bin/brew
+  print -- "#!/usr/bin/env zsh
+  export HOMEBREW_CASK_OPTS=\"--no-quarantine \${HOMEBREW_CASK_OPTS}\"
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
+  export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
+  \"${homebrew_directory}/bin/brew\" \"\$@\"" > ${brewCallerPath}
+  chown ${username}:staff ${brewCallerPath}
+  chmod ug+x ${brewCallerPath}
 }
 
 function updateBrew() {
-  local brewCallerPath=${homebrew_prefix}/bin/brew
+  local brewCallerPath=${homebrew_directory}/bin/brew
   (
     eval "$(${brewCallerPath} shellenv)"
     ${brewCallerPath} update --force --quiet
-    chmod go-w "${homebrew_prefix}/share/zsh"
+    chmod go-w "${homebrew_directory}/share/zsh"
   )
 }
 
@@ -76,7 +87,7 @@ function createLaunchDaemonsPlist() {
     <key>Label</key>
     <string>${launcherName}</string>
     <key>Program</key>
-    <string>${homebrew_prefix}/bin/brew</string>
+    <string>${homebrew_directory}/bin/brew</string>
     <key>ProgramArguments</key>
     <array>
       <string>${brewCommand}</string>
@@ -94,7 +105,11 @@ function installHomebrewUpdater() {
 }
 
 function getDefaultHomebrewPrefix() {
-  print -- ${HOMEBREW_PREFIX:-${HOME}/Library/Application Support/Homebrew}
+  print -- ${HOMEBREW_PREFIX:-${HOME}/Library/Application Support}
+}
+
+function getHomebrewDirectoryPath() {
+  print -- ${homebrew_prefix:-$(getDefaultHomebrewPrefix)}/Homebrew
 }
 
 function getDefaultGitHomebrewURL() {
@@ -103,7 +118,8 @@ function getDefaultGitHomebrewURL() {
 
 function configure_system() {
   local homebrew_prefix=`getDefaultHomebrewPrefix`
-  if test -d ${homebrew_prefix}; then
+  local homebrew_directory=`getHomebrewDirectoryPath`
+  if test -d ${homebrew_directory}; then
     askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
   fi
   configureInstallPrefix || return 10
