@@ -20,7 +20,11 @@ zstyle ':vcs_info:*' enable git
 zstyle ':vcs_info:git:*' formats '%F{26}[%b]%f'
 export RPS1="\${vcs_info_msg_0_} ${RPS1}"
 
-for file in .aliases; do
-  [ -r "${file}" -a -f "${file}" ] && source "${file}";
-done;
-unset file;
+if [[ -d $HOME/.aliases ]]; then
+  for file in .aliases; do
+    [[ -r "${file}" && -f "${file}" ]] && source "${file}";
+  done
+  unset file;
+elif [[ -r $HOME/.aliases && -f $HOME/.aliases ]]; then
+  source $HOME/.aliases
+fi
