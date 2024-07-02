@@ -35,7 +35,7 @@ function createDirAndLogOnFailure() {
 function downloadHomebrew() {
 	local git_homebrew_remote=`getDefaultGitHomebrewURL`
 	pushd -q ${homebrew_directory} || return 10
-	test -d ".git" && return 11
+	test -d ".git" && return
 	git init -q
 	git config remote.origin.url "${git_homebrew_remote}"
 	git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
@@ -49,28 +49,43 @@ function downloadHomebrew() {
 }
 
 function createBrewCallerScript() {
-	local brewCallerPath=${HOME}/bin/brew
+	local cmdPath=${HOME}/bin/brew
 	local brewPath=${homebrew_directory}/bin/brew
-	[[ -f ${brewCallerPath} ]] && { chmod ug+x ${brewCallerPath}; return }
-	mkdir -p ${brewCallerPath:h}
-	print -- "#!/usr/bin/env zsh
-	export HOMEBREW_CASK_OPTS=\"--no-quarantine \${HOMEBREW_CASK_OPTS}\"
+	[[ -f ${cmdPath} ]] && rm ${cmdPath}
+	mkdir -p ${cmdPath:h}
+	cat <<- BREWCALLER > ${cmdPath}
+	#!/usr/bin/env zsh
+	export HOMEBREW_CASK_OPTS="--no-quarantine \${HOMEBREW_CASK_OPTS}"
 	export HOMEBREW_NO_AUTO_UPDATE=1
 	export HOMEBREW_NO_ANALYTICS=1
 	export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
 	export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
-	\"${brewPath}\" \"\$@\"" > ${brewCallerPath}
-	chown ${username}:staff ${brewCallerPath}
-	chmod ug+x ${brewCallerPath}
+	"${brewPath}" "\$@"
+	BREWCALLER
+	chown $(id -un):$(id -gn) ${cmdPath}
+	chmod u=rwx,go=r ${cmdPath}
+}
+
+function createBrewPeriodicScript() {
+	local brewCallerPath=${HOME}/bin/brew
+	local cmdPath=${HOME}/bin/brew-periodic
+	[[ -f ${cmdPath} ]] && rm ${cmdPath}
+	mkdir -p ${cmdPath:h}
+	cat <<- BREWCALLER > ${cmdPath}
+	#!/usr/bin/env zsh
+	local brew='${brewCallerPath}'
+	\$brew update
+	\$brew upgrade --greedy
+	\$brew cleanup
+	BREWCALLER
+	chown $(id -un):$(id -gn) ${cmdPath}
+	chmod u=rwx,go=r ${cmdPath}
 }
 
 function updateBrew() {
 	local brewPath=${homebrew_directory}/bin/brew
-	(
-		eval "$(${brewPath} shellenv)"
-		${brewPath} update --force --quiet
-		chmod go-w "${homebrew_directory}/share/zsh"
-	)
+	${brewPath} update --force --quiet
+	chmod go-w "${homebrew_directory}/share/zsh"
 }
 
 function createLaunchDaemonsPlist() {
@@ -78,30 +93,34 @@ function createLaunchDaemonsPlist() {
 	local serviceName="de.astzweig.macos.launchagents.$1"
 	local launchAgentPath=${HOME}/Library/LaunchAgents
 	local launcherPath="${launchAgentPath}/${serviceName}.plist"
-	local brewCommand="$2"
 	[[ -d ${launchAgentPath} ]] || mkdir ${launchAgentPath} || return
-	[[ -f ${launcherPath} ]] && return
-	print -- "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-	<dict>
-		<key>Label</key>
-		<string>${serviceName}</string>
-		<key>ProgramArguments</key>
-		<array>
-			<string>${homebrew_directory}/bin/brew</string>
-			<string>${brewCommand}</string>
-		</array>
-		<key>StartInterval</key>
-		<integer>1800</integer>
-	</dict>
-</plist>" > ${launcherPath} || return
+	[[ -f ${launcherPath} ]] && {
+		launchctl disable gui/${uid}/${serviceName}
+		rm ${launcherPath}
+	}
+	cat <<- LAUNCHDPLIST > ${launcherPath}
+	<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<plist version="1.0">
+		<dict>
+			<key>Label</key>
+			<string>${serviceName}</string>
+			<key>ProgramArguments</key>
+			<array>
+				<string>${HOME}/bin/brew-periodic</string>
+			</array>
+			<key>StartInterval</key>
+			<integer>1800</integer>
+		</dict>
+	</plist>
+	LAUNCHDPLIST
 	chmod u=rw,go=r ${launcherPath}
-	launchctl bootstrap gui/${uid} ${launcherPath}
+	launchctl enable gui/${uid}/${serviceName} &> /dev/null
+	launchctl bootstrap gui/${uid}/ ${launcherPath} &> /dev/null || true
 }
 
 function installHomebrewUpdater() {
-	createLaunchDaemonsPlist brew-updater update
+	createLaunchDaemonsPlist brew-updater
 }
 
 function getDefaultHomebrewPrefix() {
@@ -119,14 +138,12 @@ function getDefaultGitHomebrewURL() {
 function configure_system() {
 	local homebrew_prefix=`getDefaultHomebrewPrefix`
 	local homebrew_directory=`getHomebrewDirectoryPath`
-	if test -d ${homebrew_directory}; then
-		askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
-	fi
 	configureInstallPrefix || return 10
 	indicateActivity -- 'Downloading Homebrew' downloadHomebrew || return 11
 	indicateActivity -- 'Create brew caller script' createBrewCallerScript || return 12
-	indicateActivity -- 'Update brew' updateBrew || return 13
-	indicateActivity -- 'Install Homebrew updater' installHomebrewUpdater || return 14
+	indicateActivity -- 'Create brew periodic script' createBrewPeriodicScript || return 13
+	indicateActivity -- 'Update brew' updateBrew || return 14
+	indicateActivity -- 'Install Homebrew updater' installHomebrewUpdater || return 15
 }
 
 
