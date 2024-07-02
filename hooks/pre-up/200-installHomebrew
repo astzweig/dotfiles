@@ -5,132 +5,132 @@ export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
 export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
 
 function getExecPrerequisites() {
-  cmds+=(
-    [launchctl]=''
-    [git]=''
-    [mkdir]=''
-    [chmod]=''
-    []=''
-  )
+	cmds+=(
+		[launchctl]=''
+		[git]=''
+		[mkdir]=''
+		[chmod]=''
+		[]=''
+	)
 }
 
 function configureInstallPrefix() {
-  local dirPath= desc=
-  for dirPath desc in ${homebrew_prefix} 'Creating install prefix' ${homebrew_directory} 'Creating Homebrew directory'; do
-    if [[ ! -d ${dirPath} ]]; then
-      indicateActivity -- ${desc} createDirAndLogOnFailure ${dirPath}
-    fi
-  done
+	local dirPath= desc=
+	for dirPath desc in ${homebrew_prefix} 'Creating install prefix' ${homebrew_directory} 'Creating Homebrew directory'; do
+		if [[ ! -d ${dirPath} ]]; then
+			indicateActivity -- ${desc} createDirAndLogOnFailure ${dirPath}
+		fi
+	done
 }
 
 function createDirAndLogOnFailure() {
-  local dirPath=$1
-  mkdir -p ${dirPath} 2> /dev/null || {
-    loptty -- -e 'Could not create directory' -e $dirPath
-    return 10
-  }
-  chmod 744 ${dirPath}
+	local dirPath=$1
+	mkdir -p ${dirPath} 2> /dev/null || {
+		loptty -- -e 'Could not create directory' -e $dirPath
+		return 10
+	}
+	chmod 744 ${dirPath}
 }
 
 function downloadHomebrew() {
-  local git_homebrew_remote=`getDefaultGitHomebrewURL`
-  pushd -q ${homebrew_directory} || return 10
-  test -d ".git" && return 11
-  git init -q
-  git config remote.origin.url "${git_homebrew_remote}"
-  git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
-  git config core.autocrlf false
-  git config --replace-all homebrew.analyticsmessage false
-  git config --replace-all homebrew.caskanalyticsmessage false
-  git fetch --quiet --force origin > /dev/null
-  git fetch --quiet --force --tags origin > /dev/null
-  git reset --hard origin/master
-  popd -q
+	local git_homebrew_remote=`getDefaultGitHomebrewURL`
+	pushd -q ${homebrew_directory} || return 10
+	test -d ".git" && return 11
+	git init -q
+	git config remote.origin.url "${git_homebrew_remote}"
+	git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+	git config core.autocrlf false
+	git config --replace-all homebrew.analyticsmessage false
+	git config --replace-all homebrew.caskanalyticsmessage false
+	git fetch --quiet --force origin > /dev/null
+	git fetch --quiet --force --tags origin > /dev/null
+	git reset --hard origin/master
+	popd -q
 }
 
 function createBrewCallerScript() {
-  local brewCallerPath=${HOME}/bin/brew
-  local brewPath=${homebrew_directory}/bin/brew
-  [[ -f ${brewCallerPath} ]] && { chmod ug+x ${brewCallerPath}; return }
-  mkdir -p ${brewCallerPath:h}
-  print -- "#!/usr/bin/env zsh
-  export HOMEBREW_CASK_OPTS=\"--no-quarantine \${HOMEBREW_CASK_OPTS}\"
-  export HOMEBREW_NO_AUTO_UPDATE=1
-  export HOMEBREW_NO_ANALYTICS=1
-  export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
-  export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
-  \"${brewPath}\" \"\$@\"" > ${brewCallerPath}
-  chown ${username}:staff ${brewCallerPath}
-  chmod ug+x ${brewCallerPath}
+	local brewCallerPath=${HOME}/bin/brew
+	local brewPath=${homebrew_directory}/bin/brew
+	[[ -f ${brewCallerPath} ]] && { chmod ug+x ${brewCallerPath}; return }
+	mkdir -p ${brewCallerPath:h}
+	print -- "#!/usr/bin/env zsh
+	export HOMEBREW_CASK_OPTS=\"--no-quarantine \${HOMEBREW_CASK_OPTS}\"
+	export HOMEBREW_NO_AUTO_UPDATE=1
+	export HOMEBREW_NO_ANALYTICS=1
+	export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
+	export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
+	\"${brewPath}\" \"\$@\"" > ${brewCallerPath}
+	chown ${username}:staff ${brewCallerPath}
+	chmod ug+x ${brewCallerPath}
 }
 
 function updateBrew() {
-  local brewPath=${homebrew_directory}/bin/brew
-  (
-    eval "$(${brewPath} shellenv)"
-    ${brewPath} update --force --quiet
-    chmod go-w "${homebrew_directory}/share/zsh"
-  )
+	local brewPath=${homebrew_directory}/bin/brew
+	(
+		eval "$(${brewPath} shellenv)"
+		${brewPath} update --force --quiet
+		chmod go-w "${homebrew_directory}/share/zsh"
+	)
 }
 
 function createLaunchDaemonsPlist() {
-  local uid=`id -u`
-  local serviceName="de.astzweig.macos.launchagents.$1"
-  local launchAgentPath=${HOME}/Library/LaunchAgents
-  local launcherPath="${launchAgentPath}/${serviceName}.plist"
-  local brewCommand="$2"
-  [[ -d ${launchAgentPath} ]] || mkdir ${launchAgentPath} || return
-  [[ -f ${launcherPath} ]] && return
-  print -- "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+	local uid=`id -u`
+	local serviceName="de.astzweig.macos.launchagents.$1"
+	local launchAgentPath=${HOME}/Library/LaunchAgents
+	local launcherPath="${launchAgentPath}/${serviceName}.plist"
+	local brewCommand="$2"
+	[[ -d ${launchAgentPath} ]] || mkdir ${launchAgentPath} || return
+	[[ -f ${launcherPath} ]] && return
+	print -- "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
 <plist version=\"1.0\">
-  <dict>
-    <key>Label</key>
-    <string>${serviceName}</string>
-    <key>ProgramArguments</key>
-    <array>
-      <string>${homebrew_directory}/bin/brew</string>
-      <string>${brewCommand}</string>
-    </array>
-    <key>StartInterval</key>
-    <integer>1800</integer>
-  </dict>
+	<dict>
+		<key>Label</key>
+		<string>${serviceName}</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>${homebrew_directory}/bin/brew</string>
+			<string>${brewCommand}</string>
+		</array>
+		<key>StartInterval</key>
+		<integer>1800</integer>
+	</dict>
 </plist>" > ${launcherPath} || return
-  chmod u=rw,go=r ${launcherPath}
-  launchctl bootstrap gui/${uid} ${launcherPath}
+	chmod u=rw,go=r ${launcherPath}
+	launchctl bootstrap gui/${uid} ${launcherPath}
 }
 
 function installHomebrewUpdater() {
-  createLaunchDaemonsPlist brew-updater update
+	createLaunchDaemonsPlist brew-updater update
 }
 
 function getDefaultHomebrewPrefix() {
-  print -- ${HOMEBREW_PREFIX:-${HOME}/Library/Application Support}
+	print -- ${HOMEBREW_PREFIX:-${HOME}/Library/Application Support}
 }
 
 function getHomebrewDirectoryPath() {
-  print -- ${homebrew_prefix:-$(getDefaultHomebrewPrefix)}/Homebrew
+	print -- ${homebrew_prefix:-$(getDefaultHomebrewPrefix)}/Homebrew
 }
 
 function getDefaultGitHomebrewURL() {
-  print -- ${HOMEBREW_BREW_GIT_REMOTE:-https://github.com/Homebrew/brew.git}
+	print -- ${HOMEBREW_BREW_GIT_REMOTE:-https://github.com/Homebrew/brew.git}
 }
 
 function configure_system() {
-  local homebrew_prefix=`getDefaultHomebrewPrefix`
-  local homebrew_directory=`getHomebrewDirectoryPath`
-  if test -d ${homebrew_directory}; then
-    askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
-  fi
-  configureInstallPrefix || return 10
-  indicateActivity -- 'Downloading Homebrew' downloadHomebrew || return 11
-  indicateActivity -- 'Create brew caller script' createBrewCallerScript || return 12
-  indicateActivity -- 'Update brew' updateBrew || return 13
-  indicateActivity -- 'Install Homebrew updater' installHomebrewUpdater || return 14
+	local homebrew_prefix=`getDefaultHomebrewPrefix`
+	local homebrew_directory=`getHomebrewDirectoryPath`
+	if test -d ${homebrew_directory}; then
+		askUser confirm -n 'Homebrew seems to have already been installed for the current user. Install again?' < $(getProcessTTY) || return
+	fi
+	configureInstallPrefix || return 10
+	indicateActivity -- 'Downloading Homebrew' downloadHomebrew || return 11
+	indicateActivity -- 'Create brew caller script' createBrewCallerScript || return 12
+	indicateActivity -- 'Update brew' updateBrew || return 13
+	indicateActivity -- 'Install Homebrew updater' installHomebrewUpdater || return 14
 }
 
 
 if [[ "${ZSH_EVAL_CONTEXT}" == toplevel ]]; then
-  source ../lib.sh || exit
-  app_main "$@"
+	source ../lib.sh || exit
+	app_main "$@"
 fi
