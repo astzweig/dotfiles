@@ -49,34 +49,35 @@ function downloadHomebrew() {
 }
 
 function createBrewCallerScript() {
-  local brewCallerPath=${homebrew_directory}/bin/brew
-  [[ -f ${HOME}/bin/brew ]] && { chmod ug+x ${brewCallerPath}; return }
-  mkdir -p ${HOME}/bin
+  local brewCallerPath=${HOME}/bin/brew
+  local brewPath=${homebrew_directory}/bin/brew
+  [[ -f ${brewCallerPath} ]] && { chmod ug+x ${brewCallerPath}; return }
+  mkdir -p ${brewCallerPath:h}
   print -- "#!/usr/bin/env zsh
   export HOMEBREW_CASK_OPTS=\"--no-quarantine \${HOMEBREW_CASK_OPTS}\"
   export HOMEBREW_NO_AUTO_UPDATE=1
   export HOMEBREW_NO_ANALYTICS=1
   export HOMEBREW_NO_ANALYTICS_THIS_RUN=1
   export HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT=1
-  \"${homebrew_directory}/bin/brew\" \"\$@\"" > ${brewCallerPath}
+  \"${brewPath}\" \"\$@\"" > ${brewCallerPath}
   chown ${username}:staff ${brewCallerPath}
   chmod ug+x ${brewCallerPath}
 }
 
 function updateBrew() {
-  local brewCallerPath=${homebrew_directory}/bin/brew
+  local brewPath=${homebrew_directory}/bin/brew
   (
-    eval "$(${brewCallerPath} shellenv)"
-    ${brewCallerPath} update --force --quiet
+    eval "$(${brewPath} shellenv)"
+    ${brewPath} update --force --quiet
     chmod go-w "${homebrew_directory}/share/zsh"
   )
 }
 
 function createLaunchDaemonsPlist() {
   local uid=`id -u`
-  local launcherName="de.astzweig.macos.launchagents.$1"
+  local serviceName="de.astzweig.macos.launchagents.$1"
   local launchAgentPath=${HOME}/Library/LaunchAgents
-  local launcherPath="${launchAgentPath}/${launcherName}.plist"
+  local launcherPath="${launchAgentPath}/${serviceName}.plist"
   local brewCommand="$2"
   [[ -d ${launchAgentPath} ]] || mkdir ${launchAgentPath} || return
   [[ -f ${launcherPath} ]] && return
@@ -85,11 +86,10 @@ function createLaunchDaemonsPlist() {
 <plist version=\"1.0\">
   <dict>
     <key>Label</key>
-    <string>${launcherName}</string>
-    <key>Program</key>
-    <string>${homebrew_directory}/bin/brew</string>
+    <string>${serviceName}</string>
     <key>ProgramArguments</key>
     <array>
+      <string>${homebrew_directory}/bin/brew</string>
       <string>${brewCommand}</string>
     </array>
     <key>StartInterval</key>
