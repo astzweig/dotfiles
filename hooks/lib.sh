@@ -6,6 +6,7 @@ function loadDocopts() {
   local cwd=$(pwd)
   if [[ ! -f ${cwd}/docopts ]]; then
     local fileURL="${DOCOPTS_URL:-https://github.com/astzweig/docopts/releases/download/v.0.7.0/docopts_darwin_amd64}"
+    [[ $(uname -m) == arm64 && -z ${DOCOPTS_URL} ]] && fileURL="https://github.com/astzweig/docopts/releases/download/v.0.7.0/docopts_darwin_arm64"
     curl --output ${cwd}/docopts -fsSL "${fileURL}" || return
     chmod u+x ${cwd}/docopts
   fi
